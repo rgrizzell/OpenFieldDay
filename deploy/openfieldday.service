@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenFieldDay TV Scoreboard
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/OpenFieldDay
+Environment=OFD_CONFIG=/home/pi/OpenFieldDay/config.yaml
+ExecStart=/home/pi/OpenFieldDay/.venv/bin/python -m openfieldday
+Restart=always
+RestartSec=3
+User=pi
+
+[Install]
+WantedBy=multi-user.target
