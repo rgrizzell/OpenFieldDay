@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OpenFieldDay Settings</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header><h1>Settings</h1><a class="settings-link" href="/">← Dashboard</a></header>
+  <main style="display:block; max-width:600px;">
+    <form id="form" class="panel">
+      <fieldset>
+        <legend>Power class (multiplier)</legend>
+        <label><input type="radio" name="mult" value="1"> 1× (&gt;150 W)</label>
+        <label><input type="radio" name="mult" value="2"> 2× (≤150 W)</label>
+        <label><input type="radio" name="mult" value="5"> 5× (≤5 W QRP)</label>
+      </fieldset>
+      <fieldset id="bonuses"><legend>Bonuses</legend></fieldset>
+      <button type="submit">Save</button>
+      <span id="saved"></span>
+    </form>
+  </main>
+  <script src="/settings.js"></script>
+</body>
+</html>

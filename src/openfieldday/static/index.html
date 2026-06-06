@@ -1,1 +1,37 @@
-<!doctype html><title>OpenFieldDay</title><p>Dashboard placeholder.</p>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenFieldDay Scoreboard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>OpenFieldDay</h1>
+    <div id="conn" class="disconnected">⚠ Disconnected — reconnecting…</div>
+    <a class="settings-link" href="/settings.html">Settings</a>
+  </header>
+  <main>
+    <section class="panel score">
+      <div class="big" id="score">0</div><div class="label">Score</div>
+      <div class="sub"><span id="total">0</span> QSOs · <span id="points">0</span> pts ×
+        <span id="mult">1</span> + <span id="bonus">0</span> bonus</div>
+    </section>
+    <section class="panel rate">
+      <div class="big" id="rate10">0</div><div class="label">QSOs/hr (10 min)</div>
+      <div class="sub"><span id="rate60">0</span>/hr last 60 min</div>
+    </section>
+    <section class="panel chart">
+      <div class="label">Band × Mode</div>
+      <canvas id="bandModeChart"></canvas>
+    </section>
+    <section class="panel ops">
+      <div class="label">Operators</div>
+      <table id="opTable"><tbody></tbody></table>
+    </section>
+  </main>
+  <script src="/vendor/chart.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

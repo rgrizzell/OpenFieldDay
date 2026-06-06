@@ -78,6 +78,11 @@ def create_app(config_path: str | Path = "config.yaml", start_source: bool = Tru
         recompute()
         return cfg.to_public_dict()
 
+    @app.get("/api/bonus-catalog")
+    def bonus_catalog() -> dict:
+        from .config import BONUS_CATALOG
+        return BONUS_CATALOG
+
     @app.get("/events")
     async def events() -> StreamingResponse:
         return StreamingResponse(_sse_stream(broadcaster), media_type="text/event-stream")

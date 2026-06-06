@@ -62,3 +62,10 @@ async def test_sse_stream_emits_data_frames():
     assert frame.endswith("\n\n")
     payload = json.loads(frame[len("data:"):].strip())
     assert "total_qsos" in payload
+
+
+def test_bonus_catalog_endpoint(tmp_path):
+    app, client = make_client(tmp_path)
+    r = client.get("/api/bonus-catalog")
+    assert r.status_code == 200
+    assert "Emergency power" in r.json()
