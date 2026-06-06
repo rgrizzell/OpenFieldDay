@@ -93,7 +93,7 @@ def create_app(config_path: str | Path = "config.yaml", start_source: bool = Tru
 
 async def _sse_stream(broadcaster):
     async for data in broadcaster.subscribe():
-        yield f"data:{data}\n\n"
+        yield f"data: {data}\n\n"
 
 
 def _stats_to_dict(stats) -> dict:

@@ -75,6 +75,10 @@ class N3FJPSource(Source):
                 continue
             if is_enterevent(payload):
                 await self._send(LIST_COMMAND)  # refresh now
+            # Otherwise treat it as a LIST response. The guard accepts payloads that
+            # look like a record dump (or have no command id), and we only replace
+            # the store on a non-empty parse or the explicit empty-log `<CMD></CMD>`
+            # — so an unexpected/partial message never wipes the log to zero.
             elif message_type(payload) is None or "LISTRECORD" in payload.upper() or payload.upper().endswith("</CMD>"):
                 qsos = parse_list(payload)
                 if qsos or payload.upper() == "<CMD></CMD>":
