@@ -71,10 +71,11 @@ def test_bonus_catalog_endpoint(tmp_path):
     assert "Emergency power" in r.json()
 
 
-def test_config_endpoint_includes_theme_colors(tmp_path):
+def test_config_endpoint_includes_theme_data(tmp_path):
     app, client = make_client(tmp_path)
     cfg = client.get("/api/config").json()
-    assert cfg["colors"]["accent"]      # merged theme present
+    assert set(cfg["colors"]) == {"light", "dark"}   # per-theme override buckets
+    assert cfg["theme"]["auto_light_start"] == 5
     assert cfg["has_logo"] is False
 
 

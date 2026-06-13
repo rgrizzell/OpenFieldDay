@@ -38,17 +38,21 @@ def test_load_missing_file_returns_defaults(tmp_path):
     assert loaded == Config()
 
 
-def test_default_colors_and_no_logo():
+def test_theme_overrides_default_empty_and_no_logo():
     c = Config()
-    assert c.merged_colors["accent"] == "#ffd166"
+    assert c.theme_color_overrides() == {"light": {}, "dark": {}}
     assert c.has_logo is False
+    assert c.auto_light_start == 5 and c.auto_light_end == 21
 
 
-def test_color_overrides_merge_onto_defaults():
+def test_flat_colors_treated_as_dark_overrides():
     c = Config(colors={"accent": "#000000"})
-    m = c.merged_colors
-    assert m["accent"] == "#000000"     # overridden
-    assert m["bg"] == "#0b1021"         # untouched default still present
+    assert c.theme_color_overrides() == {"light": {}, "dark": {"accent": "#000000"}}
+
+
+def test_nested_colors_kept_per_theme():
+    c = Config(colors={"light": {"bg": "#ffffff"}, "dark": {"bg": "#000000"}})
+    assert c.theme_color_overrides() == {"light": {"bg": "#ffffff"}, "dark": {"bg": "#000000"}}
 
 
 def test_has_logo_tracks_file_existence(tmp_path):
@@ -59,17 +63,27 @@ def test_has_logo_tracks_file_existence(tmp_path):
     assert Config(logo_path=str(f)).has_logo is True
 
 
-def test_to_public_dict_exposes_colors_and_hides_logo_path(tmp_path):
+def test_to_public_dict_exposes_overrides_and_hides_logo_path(tmp_path):
     f = tmp_path / "logo.png"
     f.write_bytes(b"x")
     pub = Config(logo_path=str(f), colors={"bg": "#111111"}).to_public_dict()
     assert "logo_path" not in pub
     assert pub["has_logo"] is True
-    assert pub["colors"]["bg"] == "#111111"
+    assert pub["colors"] == {"light": {}, "dark": {"bg": "#111111"}}
+    assert pub["theme"] == {"auto_light_start": 5, "auto_light_end": 21}
 
 
-def test_colors_and_logo_roundtrip(tmp_path):
+def test_colors_logo_and_window_roundtrip(tmp_path):
     path = tmp_path / "config.yaml"
-    original = Config(colors={"accent": "#abcdef"}, logo_path="/srv/logo.png")
+    # Flat colors must still load (back-compat with the simple/legacy form).
+    original = Config(colors={"accent": "#abcdef"}, logo_path="/srv/logo.png",
+                      auto_light_start=6, auto_light_end=20)
+    original.save(path)
+    assert Config.load(path) == original
+
+
+def test_nested_colors_roundtrip(tmp_path):
+    path = tmp_path / "config.yaml"
+    original = Config(colors={"light": {"bg": "#fff"}, "dark": {"accent": "#000"}})
     original.save(path)
     assert Config.load(path) == original

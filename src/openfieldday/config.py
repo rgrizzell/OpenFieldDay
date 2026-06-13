@@ -26,17 +26,6 @@ BONUS_CATALOG: dict[str, int] = {
 # Allowed Field Day power multipliers. VERIFY tiers/values against current rules.
 POWER_MULTIPLIERS = {1, 2, 5}
 
-# Dashboard theme. Keys match the CSS custom properties (--bg, --accent, ...);
-# config values override these and are applied by the dashboard at load.
-DEFAULT_COLORS: dict[str, str] = {
-    "bg": "#0b1021",
-    "panel": "#161c3a",
-    "fg": "#f5f7ff",
-    "accent": "#ffd166",
-    "bad": "#ef476f",
-    "good": "#06d6a0",
-}
-
 
 @dataclass
 class Config:
@@ -44,18 +33,31 @@ class Config:
     n3fjp_port: int = 1100
     power_multiplier: int = 2
     bonuses: dict[str, int] = field(default_factory=dict)
-    # Theme overrides (subset of DEFAULT_COLORS keys) and an optional logo image
-    # path on disk; the logo tile only appears when a readable file is configured.
-    colors: dict[str, str] = field(default_factory=dict)
-    logo_path: str | None = None
+    # Theme color overrides on top of the built-in light/dark palettes (the
+    # defaults live in the dashboard CSS). Either a nested mapping
+    #   {"light": {...}, "dark": {...}}
+    # or a flat {key: value} dict, which is treated as dark-theme overrides for
+    # backward compatibility. Keys match the CSS custom properties (bg, accent...).
+    colors: dict = field(default_factory=dict)
+    logo_path: str | None = None  # optional logo image; tile shown only if readable
+    # "auto" theme mode uses light during [auto_light_start, auto_light_end) local
+    # (hours, 24h) and dark otherwise.
+    auto_light_start: int = 5
+    auto_light_end: int = 21
 
     @property
     def bonus_points(self) -> int:
         return sum(self.bonuses.values())
 
-    @property
-    def merged_colors(self) -> dict[str, str]:
-        return {**DEFAULT_COLORS, **self.colors}
+    def theme_color_overrides(self) -> dict:
+        """Per-theme color overrides as {"light": {...}, "dark": {...}}.
+
+        A flat color dict (legacy/simple form) is applied to the dark theme.
+        """
+        c = self.colors or {}
+        if "light" in c or "dark" in c:
+            return {"light": dict(c.get("light") or {}), "dark": dict(c.get("dark") or {})}
+        return {"light": {}, "dark": dict(c)}
 
     @property
     def has_logo(self) -> bool:
@@ -69,6 +71,8 @@ class Config:
             "bonuses": self.bonuses,
             "colors": self.colors,
             "logo_path": self.logo_path,
+            "auto_light_start": self.auto_light_start,
+            "auto_light_end": self.auto_light_end,
         }
         Path(path).write_text(yaml.safe_dump(data, sort_keys=True))
 
@@ -85,6 +89,8 @@ class Config:
             bonuses=dict(data.get("bonuses", {})),
             colors=dict(data.get("colors") or {}),
             logo_path=data.get("logo_path") or None,
+            auto_light_start=int(data.get("auto_light_start", 5)),
+            auto_light_end=int(data.get("auto_light_end", 21)),
         )
 
     def to_public_dict(self) -> dict:
@@ -99,6 +105,10 @@ class Config:
             "power_multiplier": self.power_multiplier,
             "bonuses": self.bonuses,
             "bonus_points": self.bonus_points,
-            "colors": self.merged_colors,
+            "colors": self.theme_color_overrides(),
+            "theme": {
+                "auto_light_start": self.auto_light_start,
+                "auto_light_end": self.auto_light_end,
+            },
             "has_logo": self.has_logo,
         }

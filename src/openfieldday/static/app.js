@@ -10,6 +10,54 @@ function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
+// --- Theme mode -----------------------------------------------------------
+// Behavior modes cycle on the header icon and persist per-browser. "auto" follows
+// time of day (light during the configured window), "system" follows the OS
+// preference, "light"/"dark" are fixed and disable any switching.
+const THEME_KEY = "ofd-theme-mode";
+const THEME_MODES = ["auto", "system", "light", "dark"];
+const MODE_ICON = { auto: "🕔", system: "💻", light: "☀️", dark: "🌙" };
+const MODE_LABEL = { auto: "Auto (time of day)", system: "Match browser", light: "Light", dark: "Dark" };
+let themeMode = localStorage.getItem(THEME_KEY) || "auto";
+let themeWindow = { start: 5, end: 21 };  // light-mode hours for "auto"; set from config
+
+function resolveTheme() {
+  if (themeMode === "light" || themeMode === "dark") return themeMode;
+  if (themeMode === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  const h = new Date().getHours();  // auto: light within [start, end), wraps midnight
+  const { start, end } = themeWindow;
+  const isLight = start <= end ? (h >= start && h < end) : (h >= start || h < end);
+  return isLight ? "light" : "dark";
+}
+
+function applyThemeMode() {
+  const theme = resolveTheme();
+  const root = document.documentElement;
+  if (root.getAttribute("data-theme") !== theme) {
+    root.setAttribute("data-theme", theme);
+    applyChartColors();  // guarded: no-op until the charts exist
+  }
+  const btn = document.getElementById("themeToggle");
+  if (btn) {
+    btn.textContent = MODE_ICON[themeMode];
+    btn.title = `Theme: ${MODE_LABEL[themeMode]} (showing ${theme})`;
+  }
+}
+
+function setupThemeToggle() {
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    themeMode = THEME_MODES[(THEME_MODES.indexOf(themeMode) + 1) % THEME_MODES.length];
+    localStorage.setItem(THEME_KEY, themeMode);
+    applyThemeMode();
+  });
+  window.matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", () => { if (themeMode === "system") applyThemeMode(); });
+  // Re-check every minute so "auto" flips at the window boundary without a reload.
+  setInterval(() => { if (themeMode === "auto") applyThemeMode(); }, 60000);
+}
+
 // Bands an Extra-class operator can work (N3FJP band tokens, 160m..70cm), plus a
 // Satellite row and an Other catch-all. The axis is pre-populated so every band
 // shows even with zero QSOs. Bands not in this list fall into "Other"; Satellite
@@ -133,11 +181,30 @@ function initChart() {
     options: {
       indexAxis: "y",  // horizontal bars: bands run down the y-axis
       responsive: true, maintainAspectRatio: false,
-      scales: { x: { stacked: true, ticks: { color: "#f5f7ff" } },
-                y: { stacked: true, ticks: { color: "#f5f7ff" } } },
-      plugins: { legend: { labels: { color: "#f5f7ff" } } },
+      scales: { x: { stacked: true, ticks: { color: cssVar("--fg") } },
+                y: { stacked: true, ticks: { color: cssVar("--fg") } } },
+      plugins: { legend: { labels: { color: cssVar("--fg") } } },
     },
   });
+}
+
+// Re-read theme CSS variables into both charts. Called after a theme switch, since
+// Chart.js captures colors at construction and won't otherwise track the palette.
+function applyChartColors() {
+  if (chart) {
+    GROUPS.forEach((g, i) => { chart.data.datasets[i].backgroundColor = cssVar(GROUP_VARS[g]); });
+    const fg = cssVar("--fg");
+    chart.options.scales.x.ticks.color = fg;
+    chart.options.scales.y.ticks.color = fg;
+    chart.options.plugins.legend.labels.color = fg;
+    chart.update();
+  }
+  if (rateChart) {
+    const accent = cssVar("--accent");
+    rateChart.data.datasets[0].borderColor = accent;
+    rateChart.data.datasets[0].backgroundColor = accent + "40";
+    rateChart.update();
+  }
 }
 
 function render(s) {
@@ -209,15 +276,38 @@ async function applyConfig() {
   } catch {
     return;  // dashboard still works on the built-in default theme
   }
-  const root = document.documentElement;
-  for (const [name, value] of Object.entries(cfg.colors || {})) {
-    root.style.setProperty(`--${name}`, value);
+  injectThemeColors(cfg.colors);
+  if (cfg.theme) {
+    themeWindow = {
+      start: cfg.theme.auto_light_start ?? themeWindow.start,
+      end: cfg.theme.auto_light_end ?? themeWindow.end,
+    };
   }
   if (cfg.has_logo) {
     // Cache-bust so a swapped logo file shows without a hard refresh.
     document.getElementById("logoImg").src = "/logo?ts=" + Date.now();
     document.getElementById("logoPanel").hidden = false;
   }
+}
+
+// Inject config color overrides as per-theme rules. Appended after the stylesheet
+// so equal-specificity [data-theme=...] selectors win over the built-in defaults.
+function injectThemeColors(colors) {
+  if (!colors) return;
+  let css = "";
+  for (const theme of ["light", "dark"]) {
+    const vars = colors[theme];
+    if (!vars) continue;
+    const decls = Object.entries(vars).map(([k, v]) => `--${k}:${v};`).join("");
+    if (decls) css += `[data-theme="${theme}"]{${decls}}`;
+  }
+  let el = document.getElementById("theme-overrides");
+  if (!el) {
+    el = document.createElement("style");
+    el.id = "theme-overrides";
+    document.head.appendChild(el);
+  }
+  el.textContent = css;
 }
 
 function connect() {
@@ -228,13 +318,18 @@ function connect() {
   };
 }
 
-// Apply the configured theme first so the charts read the final CSS variables.
+// Set the theme synchronously from localStorage before anything paints or the
+// charts read their colors (avoids a flash and a wrong-palette first render).
+applyThemeMode();
+
 async function start() {
-  await applyConfig();
+  await applyConfig();   // inject per-theme overrides + read the auto window
+  applyThemeMode();      // re-evaluate now that the configured window is known
   initChart();
   initRateChart();
   initSections();
   startClock();
+  setupThemeToggle();
   connect();
 }
 start();
