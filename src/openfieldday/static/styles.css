@@ -2,15 +2,17 @@
    sets data-theme on <html>; config can override either palette (see app.js). The
    --line/--dim/--tile-bg helpers flip per theme so borders and muted text stay
    visible on both backgrounds. */
+/* Solarized (Ethan Schoonover). Accent/good/bad are the shared Solarized hues
+   that read on both backgrounds; only bg/panel/text flip between light and dark. */
 :root, [data-theme="light"] {
-  --bg:#eef1f7; --panel:#ffffff; --fg:#11151f;
-  --accent:#d62828; --good:#1d4ed8; --bad:#c2410c;
-  --line:rgba(0,0,0,0.12); --dim:rgba(0,0,0,0.45); --tile-bg:rgba(0,0,0,0.05);
+  --bg:#fdf6e3; --panel:#eee8d5; --fg:#586e75;       /* base3 / base2 / base01 */
+  --accent:#268bd2; --good:#859900; --bad:#dc322f;   /* blue / green / red */
+  --line:rgba(88,110,117,0.22); --dim:#93a1a1; --tile-bg:rgba(88,110,117,0.10);
 }
 [data-theme="dark"] {
-  --bg:#0b1021; --panel:#161c3a; --fg:#f5f7ff;
-  --accent:#ffd166; --good:#06d6a0; --bad:#ef476f;
-  --line:rgba(255,255,255,0.1); --dim:rgba(255,255,255,0.4); --tile-bg:rgba(255,255,255,0.07);
+  --bg:#002b36; --panel:#073642; --fg:#93a1a1;       /* base03 / base02 / base1 */
+  --accent:#268bd2; --good:#859900; --bad:#dc322f;   /* blue / green / red */
+  --line:rgba(147,161,161,0.18); --dim:#586e75; --tile-bg:rgba(147,161,161,0.10);
 }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sans-serif; }
@@ -34,7 +36,7 @@ body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sa
 .settings-link { margin-left:0.6rem; }
 #conn, #contest { align-self:center; font-weight:bold; padding:0.2rem 0.6rem; border-radius:0.4rem; }
 #conn.connected { background:var(--good); color:#003; }
-#conn.disconnected { background:var(--bad); }
+#conn.disconnected { background:var(--bad); color:#fdf6e3; }
 #contest.active { background:var(--good); color:#003; }
 #contest.inactive { background:var(--tile-bg); color:var(--fg); border:1px solid var(--line); }
 main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:100vh; }
@@ -91,7 +93,9 @@ main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:100
                    position:sticky; top:0; background:var(--panel); }
 .qsolog tbody td { padding:0.25rem 0.5rem; white-space:nowrap;
                    border-bottom:1px solid var(--line); }
-.qsolog tbody td:first-child { font-weight:700; color:var(--accent); }
+/* Call, Class, Section share the accent color; Op stays default text color. */
+.qsolog tbody td:nth-child(-n+3) { color:var(--accent); }
+.qsolog tbody td:first-child { font-weight:700; }
 #secCount { font-weight:800; color:var(--accent); margin-left:0.4rem; letter-spacing:0; }
 .sec-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(7rem, 1fr));
             gap:0.8rem 1rem; align-content:space-evenly; overflow:auto; margin-top:0.6rem;
