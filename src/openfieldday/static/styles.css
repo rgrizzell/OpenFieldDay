@@ -14,18 +14,28 @@
 }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sans-serif; }
-header { display:flex; align-items:center; gap:1rem; padding:0.5rem 1.5rem; }
-header h1 { margin:0; font-size:1.8rem; color:var(--accent); }
-.theme-toggle { margin-left:auto; background:var(--tile-bg); color:var(--fg);
-                border:1px solid var(--line); border-radius:0.5rem; cursor:pointer;
-                font-size:1.2rem; line-height:1; padding:0.3rem 0.5rem; }
-.settings-link { margin-left:0.6rem; color:var(--fg); text-decoration:none;
-                 font-size:1.2rem; line-height:1; padding:0.3rem 0.5rem;
-                 background:var(--tile-bg); border:1px solid var(--line); border-radius:0.5rem; }
-#conn { font-weight:bold; padding:0.2rem 0.6rem; border-radius:0.4rem; }
+/* Header is a compact full-width tile, aligned with the grid below (it lives
+   inside main). align-items:stretch lets the buttons fill the tile height. */
+.header-tile { flex:0 0 auto; display:flex; align-items:stretch; gap:1rem;
+               background:var(--panel); border-radius:1rem; padding:0.45rem 1.25rem; }
+.header-tile h1 { margin:0; font-size:1.8rem; color:var(--accent); align-self:center; }
+/* Box Icons, vendored as SVGs and tinted via mask + currentColor so they follow
+   the active theme. The toggle's icon mask is set per mode in app.js. */
+.bxi { display:block; height:100%; aspect-ratio:1; background-color:currentColor;
+       -webkit-mask:center/contain no-repeat; mask:center/contain no-repeat; }
+.bxi-cog { -webkit-mask-image:url(/vendor/boxicons/bx-cog.svg);
+           mask-image:url(/vendor/boxicons/bx-cog.svg); }
+.theme-toggle, .settings-link {
+  display:inline-flex; align-items:center; justify-content:center; aspect-ratio:1;
+  color:var(--fg); background:var(--tile-bg); border:1px solid var(--line);
+  border-radius:0.5rem; padding:0.3rem; cursor:pointer; text-decoration:none;
+}
+.theme-toggle { margin-left:auto; }
+.settings-link { margin-left:0.6rem; }
+#conn { align-self:center; font-weight:bold; padding:0.2rem 0.6rem; border-radius:0.4rem; }
 #conn.connected { background:var(--good); color:#003; }
 #conn.disconnected { background:var(--bad); }
-main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:calc(100vh - 64px); }
+main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:100vh; }
 .row { display:flex; gap:1rem; }
 /* Top row sizes to its content (the score/rate/clock readouts), so it stays short;
    the bottom row takes all remaining height. min-height:0 lets the bottom row's

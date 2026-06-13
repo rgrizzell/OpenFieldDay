@@ -7,13 +7,17 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header>
-    <h1>OpenFieldDay</h1>
-    <div id="conn" class="disconnected">⚠ Disconnected — reconnecting…</div>
-    <button id="themeToggle" class="theme-toggle" type="button" title="Theme">🕔</button>
-    <a class="settings-link" href="/settings.html" title="Settings" aria-label="Settings">⚙️</a>
-  </header>
   <main>
+    <header class="header-tile">
+      <h1>OpenFieldDay</h1>
+      <div id="conn" class="disconnected">⚠ Disconnected — reconnecting…</div>
+      <button id="themeToggle" class="theme-toggle" type="button" title="Theme" aria-label="Theme">
+        <span class="bxi" id="themeIcon"></span>
+      </button>
+      <a class="settings-link" href="/settings.html" title="Settings" aria-label="Settings">
+        <span class="bxi bxi-cog"></span>
+      </a>
+    </header>
     <div class="row top">
       <section class="panel logo" id="logoPanel" hidden>
         <img id="logoImg" alt="logo">

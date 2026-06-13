@@ -1,0 +1,2 @@
+Boxicons (https://github.com/box-icons/boxicons) — MIT License.
+Vendored SVGs: bx-cog, bx-time-five, bx-desktop, bx-sun, bx-moon.

@@ -16,7 +16,7 @@ function cssVar(name) {
 // preference, "light"/"dark" are fixed and disable any switching.
 const THEME_KEY = "ofd-theme-mode";
 const THEME_MODES = ["auto", "system", "light", "dark"];
-const MODE_ICON = { auto: "🕔", system: "💻", light: "☀️", dark: "🌙" };
+const MODE_ICON = { auto: "bx-time-five", system: "bx-desktop", light: "bx-sun", dark: "bx-moon" };
 const MODE_LABEL = { auto: "Auto (time of day)", system: "Match browser", light: "Light", dark: "Dark" };
 let themeMode = localStorage.getItem(THEME_KEY) || "auto";
 let themeWindow = { start: 5, end: 21 };  // light-mode hours for "auto"; set from config
@@ -40,10 +40,13 @@ function applyThemeMode() {
     applyChartColors();  // guarded: no-op until the charts exist
   }
   const btn = document.getElementById("themeToggle");
-  if (btn) {
-    btn.textContent = MODE_ICON[themeMode];
-    btn.title = `Theme: ${MODE_LABEL[themeMode]} (showing ${theme})`;
+  const icon = document.getElementById("themeIcon");
+  if (icon) {
+    const url = `url(/vendor/boxicons/${MODE_ICON[themeMode]}.svg)`;
+    icon.style.maskImage = url;
+    icon.style.webkitMaskImage = url;
   }
+  if (btn) btn.title = `Theme: ${MODE_LABEL[themeMode]} (showing ${theme})`;
 }
 
 function setupThemeToggle() {
