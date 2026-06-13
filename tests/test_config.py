@@ -87,3 +87,20 @@ def test_nested_colors_roundtrip(tmp_path):
     original = Config(colors={"light": {"bg": "#fff"}, "dark": {"accent": "#000"}})
     original.save(path)
     assert Config.load(path) == original
+
+
+def test_contest_window_parses_and_defaults_naive_to_utc():
+    from datetime import datetime, timezone
+    c = Config(contest_start="2026-06-27T18:00:00Z", contest_end="2026-06-28T21:00:00")
+    start, end = c.contest_window()
+    assert start == datetime(2026, 6, 27, 18, 0, tzinfo=timezone.utc)
+    assert end == datetime(2026, 6, 28, 21, 0, tzinfo=timezone.utc)  # naive -> UTC
+    assert Config().contest_window() == (None, None)
+
+
+def test_contest_times_roundtrip(tmp_path):
+    path = tmp_path / "config.yaml"
+    original = Config(contest_start="2026-06-27T18:00:00+00:00",
+                      contest_end="2026-06-28T21:00:00+00:00")
+    original.save(path)
+    assert Config.load(path) == original

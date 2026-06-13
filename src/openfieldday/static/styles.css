@@ -32,9 +32,11 @@ body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sa
 }
 .theme-toggle { margin-left:auto; }
 .settings-link { margin-left:0.6rem; }
-#conn { align-self:center; font-weight:bold; padding:0.2rem 0.6rem; border-radius:0.4rem; }
+#conn, #contest { align-self:center; font-weight:bold; padding:0.2rem 0.6rem; border-radius:0.4rem; }
 #conn.connected { background:var(--good); color:#003; }
 #conn.disconnected { background:var(--bad); }
+#contest.active { background:var(--good); color:#003; }
+#contest.inactive { background:var(--tile-bg); color:var(--fg); border:1px solid var(--line); }
 main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:100vh; }
 .row { display:flex; gap:1rem; }
 /* Top row sizes to its content (the score/rate/clock readouts), so it stays short;

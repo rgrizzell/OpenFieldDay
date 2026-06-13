@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -44,10 +45,28 @@ class Config:
     # (hours, 24h) and dark otherwise.
     auto_light_start: int = 5
     auto_light_end: int = 21
+    # Contest window as ISO 8601 datetimes (include a timezone, e.g. ...Z; a naive
+    # value is treated as UTC). Drives the header contest-status indicator.
+    contest_start: str | None = None
+    contest_end: str | None = None
 
     @property
     def bonus_points(self) -> int:
         return sum(self.bonuses.values())
+
+    @staticmethod
+    def _parse_dt(value: str | None) -> datetime | None:
+        if not value:
+            return None
+        try:
+            dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+    def contest_window(self) -> tuple[datetime | None, datetime | None]:
+        """Parsed (start, end); either may be None if unset or unparseable."""
+        return self._parse_dt(self.contest_start), self._parse_dt(self.contest_end)
 
     def theme_color_overrides(self) -> dict:
         """Per-theme color overrides as {"light": {...}, "dark": {...}}.
@@ -73,6 +92,8 @@ class Config:
             "logo_path": self.logo_path,
             "auto_light_start": self.auto_light_start,
             "auto_light_end": self.auto_light_end,
+            "contest_start": self.contest_start,
+            "contest_end": self.contest_end,
         }
         Path(path).write_text(yaml.safe_dump(data, sort_keys=True))
 
@@ -82,6 +103,12 @@ class Config:
         if not p.exists():
             return cls()
         data = yaml.safe_load(p.read_text()) or {}
+
+        def as_str(v):  # YAML may parse an ISO datetime natively; store as a string
+            if v is None:
+                return None
+            return v.isoformat() if hasattr(v, "isoformat") else str(v)
+
         return cls(
             n3fjp_host=data.get("n3fjp_host", "127.0.0.1"),
             n3fjp_port=int(data.get("n3fjp_port", 1100)),
@@ -91,6 +118,8 @@ class Config:
             logo_path=data.get("logo_path") or None,
             auto_light_start=int(data.get("auto_light_start", 5)),
             auto_light_end=int(data.get("auto_light_end", 21)),
+            contest_start=as_str(data.get("contest_start")),
+            contest_end=as_str(data.get("contest_end")),
         )
 
     def to_public_dict(self) -> dict:

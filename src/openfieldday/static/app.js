@@ -229,6 +229,17 @@ function render(s) {
   conn.className = s.connected ? "connected" : "disconnected";
   conn.textContent = s.connected ? "● Connected" : "⚠ Disconnected — reconnecting…";
 
+  const CONTEST = {
+    active: ["active", "● Contest Live"],
+    pending: ["inactive", "Contest: Pending"],
+    ended: ["inactive", "Contest: Ended"],
+    unset: ["inactive", "Contest: Not Set"],
+  };
+  const contest = document.getElementById("contest");
+  const [contestCls, contestText] = CONTEST[s.contest_state] || CONTEST.unset;
+  contest.className = contestCls;
+  contest.textContent = contestText;
+
   // Index incoming counts by band -> mode group, then lay them onto the fixed axis.
   const counts = {};
   for (const bm of s.band_mode) {

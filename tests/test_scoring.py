@@ -65,6 +65,21 @@ def test_top_operators_unknown_bucket():
     assert s.top_operators[0].operator == "Unknown"
 
 
+def test_contest_state_reflects_window():
+    cfg = Config(contest_start="2026-06-27T18:00:00Z", contest_end="2026-06-28T21:00:00Z")
+    before = datetime(2026, 6, 27, 17, 0, tzinfo=timezone.utc)
+    during = datetime(2026, 6, 27, 20, 0, tzinfo=timezone.utc)
+    after = datetime(2026, 6, 29, 0, 0, tzinfo=timezone.utc)
+    assert compute_stats([], cfg, connected=True, now=before).contest_state == "pending"
+    assert compute_stats([], cfg, connected=True, now=during).contest_state == "active"
+    assert compute_stats([], cfg, connected=True, now=after).contest_state == "ended"
+
+
+def test_contest_state_unset_without_window():
+    s = compute_stats([], Config(), connected=True, now=NOW)
+    assert s.contest_state == "unset"
+
+
 def test_recent_qsos_newest_first_with_class_and_section():
     qsos = [
         q("OLDEST", "20", "SSB", minutes_ago=50, section="CT", qso_class="1A", operator="AB1CD"),

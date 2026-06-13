@@ -55,3 +55,5 @@ class Stats:
     # Most recent QSOs, newest first, for the live log panel.
     recent_qsos: list[QSOLogEntry] = field(default_factory=list)
     connected: bool = False
+    # Contest status vs the configured window: "active", "pending", "ended", "unset".
+    contest_state: str = "unset"

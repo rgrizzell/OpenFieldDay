@@ -67,6 +67,16 @@ def compute_stats(
         for q in recent
     ]
 
+    start, end = config.contest_window()
+    if not start or not end:
+        contest_state = "unset"
+    elif now < start:
+        contest_state = "pending"
+    elif now <= end:
+        contest_state = "active"
+    else:
+        contest_state = "ended"
+
     return Stats(
         total_qsos=len(qsos),
         qso_points=total_points,
@@ -80,4 +90,5 @@ def compute_stats(
         top_operators=top_operators,
         recent_qsos=recent_qsos,
         connected=connected,
+        contest_state=contest_state,
     )
