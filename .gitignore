@@ -2,3 +2,6 @@
 __pycache__/
 *.pyc
 config.yaml
+*.egg-info/
+# N3FJP / Access log databases — operator data, never source
+*.mdb

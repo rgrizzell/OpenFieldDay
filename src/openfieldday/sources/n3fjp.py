@@ -4,12 +4,19 @@ import asyncio
 import logging
 
 from .base import Source
-from .n3fjp_parser import parse_list, is_enterevent, message_type
+from .n3fjp_parser import parse_list, is_enterevent, LIST_RECORD_CMD
 from ..store import QSOStore
 
 log = logging.getLogger(__name__)
 
 LIST_COMMAND = b"<CMD><LIST><INCLUDEALL></CMD>\r\n"
+
+# N3FJP sends the entire log as a single CRLF-terminated line (records are
+# concatenated, not newline-separated). asyncio's StreamReader.readline defaults
+# to a 64 KB limit and *raises* once a line exceeds it — it does not truncate —
+# which our run() loop would treat as a connection error and reconnect forever
+# with no data. Give it plenty of headroom for a full Field Day log.
+_READ_LIMIT = 16 * 1024 * 1024
 
 
 class N3FJPSource(Source):
@@ -48,7 +55,9 @@ class N3FJPSource(Source):
             backoff = min(backoff * 2, self._backoff_max)
 
     async def _connect_and_serve(self) -> None:
-        reader, writer = await asyncio.open_connection(self._host, self._port)
+        reader, writer = await asyncio.open_connection(
+            self._host, self._port, limit=_READ_LIMIT
+        )
         self._writer = writer
         self._store.set_connected(True)
         await self._send(LIST_COMMAND)  # initial backfill
@@ -74,15 +83,18 @@ class N3FJPSource(Source):
             if not payload:
                 continue
             if is_enterevent(payload):
-                await self._send(LIST_COMMAND)  # refresh now
-            # Otherwise treat it as a LIST response. The guard accepts payloads that
-            # look like a record dump (or have no command id), and we only replace
-            # the store on a non-empty parse or the explicit empty-log `<CMD></CMD>`
-            # — so an unexpected/partial message never wipes the log to zero.
-            elif message_type(payload) is None or "LISTRECORD" in payload.upper() or payload.upper().endswith("</CMD>"):
+                # A QSO was just logged. N3FJP also auto-pushes a fresh full list,
+                # but asking explicitly keeps us correct if that ever stops.
+                await self._send(LIST_COMMAND)
+            elif LIST_RECORD_CMD in payload.upper():
+                # A LIST response carries the complete current log. Replacing the
+                # store lets deletions/edits propagate. We only replace on a
+                # non-empty parse so a malformed/partial read never wipes the
+                # board to zero (clearing the log to empty needs an app restart).
                 qsos = parse_list(payload)
-                if qsos or payload.upper() == "<CMD></CMD>":
+                if qsos:
                     self._store.replace(qsos)
+            # Anything else (e.g. CALLTABEVENT call-entry previews) is ignored.
 
     async def _poll_loop(self) -> None:
         while True:

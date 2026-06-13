@@ -6,8 +6,8 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
 
@@ -82,6 +82,13 @@ def create_app(config_path: str | Path = "config.yaml", start_source: bool = Tru
     def bonus_catalog() -> dict:
         from .config import BONUS_CATALOG
         return BONUS_CATALOG
+
+    @app.get("/logo")
+    def logo() -> FileResponse:
+        cfg = state["config"]
+        if not cfg.has_logo:
+            raise HTTPException(status_code=404, detail="no logo configured")
+        return FileResponse(cfg.logo_path)
 
     @app.get("/events")
     async def events() -> StreamingResponse:

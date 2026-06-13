@@ -13,23 +13,56 @@
     <a class="settings-link" href="/settings.html">Settings</a>
   </header>
   <main>
-    <section class="panel score">
-      <div class="big" id="score">0</div><div class="label">Score</div>
-      <div class="sub"><span id="total">0</span> QSOs · <span id="points">0</span> pts ×
-        <span id="mult">1</span> + <span id="bonus">0</span> bonus</div>
-    </section>
-    <section class="panel rate">
-      <div class="big" id="rate10">0</div><div class="label">QSOs/hr (10 min)</div>
-      <div class="sub"><span id="rate60">0</span>/hr last 60 min</div>
-    </section>
-    <section class="panel chart">
-      <div class="label">Band × Mode</div>
-      <canvas id="bandModeChart"></canvas>
-    </section>
-    <section class="panel ops">
-      <div class="label">Operators</div>
-      <table id="opTable"><tbody></tbody></table>
-    </section>
+    <div class="row top">
+      <section class="panel logo" id="logoPanel" hidden>
+        <img id="logoImg" alt="logo">
+      </section>
+      <section class="panel score">
+        <div class="big" id="score">0</div><div class="label">Score</div>
+        <div class="sub"><span id="total">0</span> QSOs · <span id="points">0</span> pts ×
+          <span id="mult">1</span> + <span id="bonus">0</span> bonus</div>
+      </section>
+      <section class="panel rate">
+        <div class="bg-chart"><canvas id="rateChart"></canvas></div>
+        <div class="rate-content">
+          <div class="big" id="rate">0</div><div class="label">QSOs/hr</div>
+          <div class="sub">trailing 60 min</div>
+        </div>
+      </section>
+      <section class="panel ops">
+        <div class="label">Operator QSOs</div>
+        <table id="opTable"><tbody></tbody></table>
+      </section>
+      <section class="panel clock">
+        <div class="clock-line">
+          <span class="big" id="clock">00:00:00</span>
+          <span class="tz" id="clockTz">LOCAL</span>
+        </div>
+        <div class="clock-line">
+          <span class="mid" id="clockUtc">00:00:00</span>
+          <span class="tz">UTC</span>
+        </div>
+      </section>
+    </div>
+    <div class="row bottom">
+      <section class="panel qsolog">
+        <div class="label">QSO Log</div>
+        <div class="log-scroll">
+          <table id="logTable">
+            <thead><tr><th>Call</th><th>Class</th><th>Section</th><th>Op</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel sections">
+        <div class="label">Sections <span id="secCount">0 / 85</span></div>
+        <div id="secGrid" class="sec-grid"></div>
+      </section>
+      <section class="panel chart">
+        <div class="label">Band × Mode</div>
+        <canvas id="bandModeChart"></canvas>
+      </section>
+    </div>
   </main>
   <script src="/vendor/chart.min.js"></script>
   <script src="/app.js"></script>

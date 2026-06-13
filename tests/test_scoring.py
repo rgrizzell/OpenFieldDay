@@ -6,9 +6,10 @@ from openfieldday.scoring import compute_stats
 NOW = datetime(2026, 6, 27, 20, 0, tzinfo=timezone.utc)
 
 
-def q(call, band, mode, operator=None, minutes_ago=None):
+def q(call, band, mode, operator=None, minutes_ago=None, section=None, qso_class=None):
     ts = None if minutes_ago is None else NOW - timedelta(minutes=minutes_ago)
-    return QSO(call=call, band=band, mode=mode, operator=operator, timestamp=ts)
+    return QSO(call=call, band=band, mode=mode, operator=operator, timestamp=ts,
+               section=section, qso_class=qso_class)
 
 
 def test_empty_log_is_all_zero():
@@ -17,7 +18,8 @@ def test_empty_log_is_all_zero():
     assert s.qso_points == 0
     assert s.score == 0
     assert s.band_mode == []
-    assert s.by_operator == []
+    assert s.top_operators == []
+    assert s.recent_qsos == []
     assert s.connected is True
 
 
@@ -39,25 +41,76 @@ def test_band_mode_breakdown_groups_modes():
     assert counts[("20", "CW")] == 1
 
 
-def test_by_operator_counts_and_unknown_bucket():
-    qsos = [q("A", "20", "SSB", operator="AB1CD"),
-            q("B", "20", "SSB", operator="AB1CD"),
-            q("C", "20", "SSB", operator=None)]
-    s = compute_stats(qsos, Config(), connected=True, now=NOW)
-    counts = {o.operator: o.count for o in s.by_operator}
-    assert counts["AB1CD"] == 2
-    assert counts["Unknown"] == 1
-    # sorted descending by count
-    assert s.by_operator[0].operator == "AB1CD"
-
-
-def test_rate_windows():
+def test_top_operators_last_hour_capped_and_drops_inactive():
     qsos = [
-        q("A", "20", "SSB", minutes_ago=2),
-        q("B", "20", "SSB", minutes_ago=5),     # 2 within last 10 min
-        q("C", "20", "SSB", minutes_ago=30),    # within last 60 min only
-        q("D", "20", "SSB", minutes_ago=90),    # outside both windows
+        q("A", "20", "SSB", operator="AB1CD", minutes_ago=2),
+        q("B", "20", "SSB", operator="AB1CD", minutes_ago=5),
+        q("C", "20", "SSB", operator="AB1CD", minutes_ago=8),   # AB1CD = 3
+        q("D", "20", "SSB", operator="EF2GH", minutes_ago=10),
+        q("E", "20", "SSB", operator="EF2GH", minutes_ago=12),  # EF2GH = 2
+        q("F", "20", "SSB", operator="IJ3KL", minutes_ago=15),  # IJ3KL = 1
+        q("G", "20", "SSB", operator="MN4OP", minutes_ago=20),  # MN4OP = 1 (over cap)
+        q("H", "20", "SSB", operator="OLD", minutes_ago=90),    # >60 min -> drops off
     ]
     s = compute_stats(qsos, Config(), connected=True, now=NOW)
-    assert s.rate_10min == 12.0   # 2 in 10 min * 6
-    assert s.rate_60min == 3.0    # 3 in last 60 min
+    assert len(s.top_operators) == 3  # capped at top 3
+    assert [o.operator for o in s.top_operators] == ["AB1CD", "EF2GH", "IJ3KL"]
+    assert s.top_operators[0].count == 3
+    assert all(o.operator != "OLD" for o in s.top_operators)  # inactive op dropped
+
+
+def test_top_operators_unknown_bucket():
+    s = compute_stats([q("A", "20", "SSB", operator=None, minutes_ago=5)],
+                      Config(), connected=True, now=NOW)
+    assert s.top_operators[0].operator == "Unknown"
+
+
+def test_recent_qsos_newest_first_with_class_and_section():
+    qsos = [
+        q("OLDEST", "20", "SSB", minutes_ago=50, section="CT", qso_class="1A", operator="AB1CD"),
+        q("NEWEST", "40", "CW", minutes_ago=1, section="EMA", qso_class="2A", operator="EF2GH"),
+    ]
+    s = compute_stats(qsos, Config(), connected=True, now=NOW)
+    assert [e.call for e in s.recent_qsos] == ["NEWEST", "OLDEST"]  # newest first
+    assert s.recent_qsos[0].qso_class == "2A"
+    assert s.recent_qsos[0].section == "EMA"
+    assert s.recent_qsos[0].operator == "EF2GH"
+
+
+def test_qsos_per_hour_counts_trailing_60_minutes():
+    qsos = [
+        q("A", "20", "SSB", minutes_ago=2),
+        q("B", "20", "SSB", minutes_ago=5),
+        q("C", "20", "SSB", minutes_ago=30),    # still within the last 60 min
+        q("D", "20", "SSB", minutes_ago=90),    # outside the window
+    ]
+    s = compute_stats(qsos, Config(), connected=True, now=NOW)
+    assert s.qsos_per_hour == 3.0   # A, B, C are within 60 min; D is not
+
+
+def test_rate_buckets_5min_over_60min():
+    qsos = [
+        q("A", "20", "SSB", minutes_ago=1),     # newest bucket (index 11)
+        q("B", "20", "SSB", minutes_ago=3),     # also newest bucket
+        q("C", "20", "SSB", minutes_ago=12),    # 10-15 min ago -> index 9
+        q("D", "20", "SSB", minutes_ago=58),    # oldest bucket (index 0)
+        q("E", "20", "SSB", minutes_ago=75),    # outside window -> ignored
+        q("F", "20", "SSB"),                     # no timestamp -> ignored
+    ]
+    s = compute_stats(qsos, Config(), connected=True, now=NOW)
+    assert len(s.rate_buckets) == 12
+    assert s.rate_buckets[11] == 2   # A, B
+    assert s.rate_buckets[9] == 1    # C
+    assert s.rate_buckets[0] == 1    # D
+    assert sum(s.rate_buckets) == 4  # E and F excluded
+
+
+def test_worked_sections_distinct_and_sorted():
+    qsos = [
+        q("A", "20", "SSB", section="CT"),
+        q("B", "20", "SSB", section="EMA"),
+        q("C", "20", "SSB", section="CT"),    # duplicate section
+        q("D", "20", "SSB", section=None),    # no section -> excluded
+    ]
+    s = compute_stats(qsos, Config(), connected=True, now=NOW)
+    assert s.worked_sections == ["CT", "EMA"]

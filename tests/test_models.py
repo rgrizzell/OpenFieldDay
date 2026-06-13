@@ -21,9 +21,9 @@ def test_qso_accepts_operator_and_timestamp():
 def test_stats_is_constructible():
     s = Stats(
         total_qsos=1, qso_points=2, power_multiplier=2, bonus_points=100,
-        score=104, rate_10min=6.0, rate_60min=1.0,
+        score=104, qsos_per_hour=1.0,
         band_mode=[BandModeCount(band="20", mode_group="Phone", count=1)],
-        by_operator=[OperatorCount(operator="AB1CD", count=1)],
+        top_operators=[OperatorCount(operator="AB1CD", count=1)],
         connected=True,
     )
     assert s.score == 104

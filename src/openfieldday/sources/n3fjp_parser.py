@@ -5,10 +5,21 @@ from datetime import datetime, timezone
 
 from ..models import QSO
 
-# One log record inside a LIST response. VERIFY this tag against a real capture.
-RECORD_TAG = "LISTRECORD"
+# N3FJP frames every message as <CMD>...</CMD>. A logged QSO in a LIST response is
+# a command whose id is LISTRESPONSE: <CMD><LISTRESPONSE><CALL>...</CALL>...</CMD>
+# — note there is NO closing </LISTRESPONSE>; the id is just the first marker tag
+# and the fields are its siblings. Multiple LISTRESPONSE blocks are concatenated
+# inside a single CRLF-terminated line, so we split on <CMD>...</CMD> blocks rather
+# than lines. Verified against a live N3FJP Field Day capture.
+LIST_RECORD_CMD = "LISTRESPONSE"
 
-_RECORD_RE = re.compile(rf"<{RECORD_TAG}>(.*?)</{RECORD_TAG}>", re.DOTALL | re.IGNORECASE)
+_CMD_BLOCK_RE = re.compile(r"<CMD>(.*?)</CMD>", re.DOTALL | re.IGNORECASE)
+_CMD_ID_RE = re.compile(r"\s*<([A-Z0-9_]+)>", re.IGNORECASE)
+
+
+def _cmd_id(block: str) -> str | None:
+    m = _CMD_ID_RE.match(block)
+    return m.group(1).upper() if m else None
 
 
 def _tag(record: str, name: str) -> str | None:
@@ -38,21 +49,29 @@ def _parse_timestamp(date: str | None, time_on: str | None) -> datetime | None:
 
 
 def parse_list(payload: str) -> list[QSO]:
-    """Parse an N3FJP LIST response into QSO records."""
+    """Parse N3FJP LISTRESPONSE records out of a payload into QSO objects.
+
+    Ignores non-LISTRESPONSE commands (e.g. CALLTABEVENT, ENTEREVENT) so a
+    real-time call-entry preview is never mistaken for a logged contact.
+    """
     qsos: list[QSO] = []
-    for record in _RECORD_RE.findall(payload):
-        call = _tag(record, "CALL")
+    for block in _CMD_BLOCK_RE.findall(payload):
+        if _cmd_id(block) != LIST_RECORD_CMD:
+            continue
+        call = _tag(block, "CALL")
         if not call:
             continue
         qsos.append(
             QSO(
                 call=call,
-                band=_tag(record, "BAND") or "",
-                mode=_tag(record, "MODE") or "",
-                operator=_tag(record, "OPERATOR"),
+                band=_tag(block, "BAND") or "",
+                mode=_tag(block, "MODE") or "",
+                operator=_tag(block, "FLDOPERATOR"),
                 timestamp=_parse_timestamp(
-                    _tag(record, "DATE"), _tag(record, "TIMEON")
+                    _tag(block, "DATE"), _tag(block, "TIMEON")
                 ),
+                section=_tag(block, "SECTION"),
+                qso_class=_tag(block, "CLASS"),
             )
         )
     return qsos

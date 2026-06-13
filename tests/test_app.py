@@ -18,7 +18,7 @@ def test_stats_endpoint_initial(tmp_path):
     body = r.json()
     assert body["total_qsos"] == 0
     assert body["connected"] is False
-    assert "band_mode" in body and "by_operator" in body
+    assert "band_mode" in body and "top_operators" in body and "recent_qsos" in body
 
 
 def test_stats_reflects_store_and_config(tmp_path):
@@ -69,3 +69,28 @@ def test_bonus_catalog_endpoint(tmp_path):
     r = client.get("/api/bonus-catalog")
     assert r.status_code == 200
     assert "Emergency power" in r.json()
+
+
+def test_config_endpoint_includes_theme_colors(tmp_path):
+    app, client = make_client(tmp_path)
+    cfg = client.get("/api/config").json()
+    assert cfg["colors"]["accent"]      # merged theme present
+    assert cfg["has_logo"] is False
+
+
+def test_logo_404_when_not_configured(tmp_path):
+    app, client = make_client(tmp_path)
+    assert client.get("/logo").status_code == 404
+
+
+def test_logo_served_when_configured(tmp_path):
+    from openfieldday.config import Config
+    logo = tmp_path / "logo.png"
+    logo.write_bytes(b"\x89PNG-fake-bytes")
+    cfg_path = tmp_path / "config.yaml"
+    Config(logo_path=str(logo)).save(cfg_path)
+    app = create_app(config_path=cfg_path, start_source=False)
+    client = TestClient(app)
+    r = client.get("/logo")
+    assert r.status_code == 200
+    assert r.content == b"\x89PNG-fake-bytes"

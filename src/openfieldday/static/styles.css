@@ -7,12 +7,72 @@ header h1 { margin:0; font-size:1.8rem; color:var(--accent); }
 #conn { font-weight:bold; padding:0.2rem 0.6rem; border-radius:0.4rem; }
 #conn.connected { background:var(--good); color:#003; }
 #conn.disconnected { background:var(--bad); }
-main { display:grid; grid-template-columns:1fr 1fr; gap:1rem; padding:1.5rem; height:calc(100vh - 64px); }
-.panel { background:var(--panel); border-radius:1rem; padding:1.5rem; display:flex; flex-direction:column; }
-.big { font-size:6rem; font-weight:800; line-height:1; color:var(--accent); }
+main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:calc(100vh - 64px); }
+.row { display:flex; gap:1rem; }
+/* Top row sizes to its content (the score/rate/clock readouts), so it stays short;
+   the bottom row takes all remaining height. min-height:0 lets the bottom row's
+   chart shrink instead of feeding Chart.js an ever-growing height. */
+.row.top { flex:0 0 auto; }
+.row.bottom { flex:1 1 0; min-height:0; }
+.row > .panel { flex:1; }
+/* These need the `.row >` prefix to outrank `.row > .panel { flex:1 }` above
+   (equal specificity, later in source), or the per-panel sizing is ignored. */
+.row > .logo { flex:0 0 auto; }
+/* `.panel { display:flex }` outranks the browser's [hidden]{display:none}, so the
+   logo tile needs an explicit, more-specific hide until a logo is configured. */
+.panel[hidden] { display:none; }
+.logo { align-items:center; justify-content:center; padding:0.75rem 1.25rem; }
+.logo img { max-height:100%; max-width:16rem; object-fit:contain; }
+.row > .score { flex:0 0 auto; }
+.row > .rate { flex:1.4; }
+/* Clock shrinks to its content and aligns right, freeing the row width for the
+   Score and Rate stats. */
+.row > .clock { flex:0 0 auto; align-items:flex-end; }
+/* min-height:0 lets a grid/flex item shrink below its content; without it the
+   chart canvas can push the row taller and feed Chart.js an ever-growing height.
+   overflow:hidden is a belt-and-suspenders guard against the same runaway. */
+.panel { background:var(--panel); border-radius:1rem; padding:1.5rem; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+/* Rate panel: a faint rate-over-time sparkline sits behind the numbers. */
+.rate { position:relative; }
+.rate .bg-chart { position:absolute; inset:0; opacity:0.28; pointer-events:none; }
+.rate .rate-content { position:relative; z-index:1; }
+.big { font-size:6rem; font-weight:800; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums; }
+/* Clock: local time large, UTC a clearly legible medium readout (not a caption);
+   each line carries its own zone tag so the two times read as a matched pair. */
+.clock { justify-content:center; gap:0.6rem; }
+.clock .big { font-size:4rem; }
+.clock-line { display:flex; align-items:baseline; gap:0.6rem; }
+.clock .mid { font-size:4rem; font-weight:800; line-height:1; color:var(--fg); font-variant-numeric:tabular-nums; }
+.clock .tz { font-size:1rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; opacity:0.55; }
 .label { text-transform:uppercase; letter-spacing:0.1em; opacity:0.7; }
 .sub { margin-top:0.5rem; opacity:0.8; }
 .ops table { width:100%; border-collapse:collapse; font-size:1.6rem; }
 .ops td { padding:0.3rem 0.5rem; border-bottom:1px solid rgba(255,255,255,0.1); }
 .ops td:last-child { text-align:right; color:var(--accent); font-weight:bold; }
+.row > .chart { flex:1.3; }
+.row > .ops { flex:0 0 auto; }   /* Top Operators: shrink to its 3-row table */
+.row > .sections { flex:1.6; }
+.row > .qsolog { flex:1.1; }
+/* QSO log: header pinned, body scrolls within the panel. */
+.log-scroll { flex:1 1 0; min-height:0; overflow:auto; margin-top:0.4rem; }
+.qsolog table { width:100%; border-collapse:collapse; font-size:1.15rem; }
+.qsolog thead th { text-align:left; font-size:0.7rem; text-transform:uppercase;
+                   letter-spacing:0.06em; opacity:0.5; padding:0.2rem 0.5rem;
+                   position:sticky; top:0; background:var(--panel); }
+.qsolog tbody td { padding:0.25rem 0.5rem; white-space:nowrap;
+                   border-bottom:1px solid rgba(255,255,255,0.08); }
+.qsolog tbody td:first-child { font-weight:700; color:var(--accent); }
+#secCount { font-weight:800; color:var(--accent); margin-left:0.4rem; letter-spacing:0; }
+.sec-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(7rem, 1fr));
+            gap:0.8rem 1rem; align-content:space-evenly; overflow:auto; margin-top:0.6rem;
+            flex:1 1 0; min-height:0; }
+.sec-group { display:flex; flex-direction:column; gap:0.3rem; }
+.sec-region { font-size:1.3rem; font-weight:800; opacity:0.6; letter-spacing:0.04em;
+              text-align:center; }
+.sec-tiles { display:grid; grid-template-columns:repeat(2, minmax(3.2rem, 1fr)); gap:0.3rem; }
+.sec { font-size:1.4rem; font-weight:700; display:flex; align-items:center;
+       justify-content:center; padding:0.3rem 0.2rem;
+       border-radius:0.35rem; background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4);
+       transition:background 0.3s, color 0.3s; }
+.sec.worked { background:var(--good); color:#003; }
 .chart canvas { flex:1; min-height:0; }

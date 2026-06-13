@@ -8,7 +8,7 @@ CW_MODES = {"CW"}
 PHONE_MODES = {"SSB", "USB", "LSB", "FM", "AM", "PHONE", "DV", "FT8PHONE"}
 DIGITAL_MODES = {
     "RTTY", "FT8", "FT4", "PSK", "PSK31", "PSK63", "JT65", "JT9",
-    "MFSK", "JS8", "OLIVIA", "DIGITAL", "DATA", "DIGITALVOICE", "MSK144",
+    "MFSK", "JS8", "OLIVIA", "DIGITAL", "DIG", "DATA", "DIGITALVOICE", "MSK144",
 }
 
 
