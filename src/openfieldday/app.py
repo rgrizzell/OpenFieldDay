@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
@@ -20,18 +21,22 @@ from .sources.n3fjp import N3FJPSource
 STATIC_DIR = Path(__file__).parent / "static"
 
 
+_HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
 class ConfigUpdate(BaseModel):
-    power_multiplier: int
-    bonuses: dict[str, int]
-    # N3FJP API target. Optional so callers can update scoring without touching it;
-    # when present, a change re-points the live source (see post_config).
+    # All optional so a caller can update just one concern (e.g. the theme builder
+    # posts only `colors`); post_config applies whichever fields are present.
+    power_multiplier: int | None = None
+    bonuses: dict[str, int] | None = None
     n3fjp_host: str | None = None
     n3fjp_port: int | None = None
+    colors: dict | None = None
 
     @field_validator("power_multiplier")
     @classmethod
-    def _check_multiplier(cls, v: int) -> int:
-        if v not in POWER_MULTIPLIERS:
+    def _check_multiplier(cls, v: int | None) -> int | None:
+        if v is not None and v not in POWER_MULTIPLIERS:
             raise ValueError(f"power_multiplier must be one of {sorted(POWER_MULTIPLIERS)}")
         return v
 
@@ -50,6 +55,21 @@ class ConfigUpdate(BaseModel):
     def _check_port(cls, v: int | None) -> int | None:
         if v is not None and not (1 <= v <= 65535):
             raise ValueError("n3fjp_port must be between 1 and 65535")
+        return v
+
+    @field_validator("colors")
+    @classmethod
+    def _check_colors(cls, v: dict | None) -> dict | None:
+        if v is None:
+            return v
+        for mode, vars in v.items():
+            if mode not in ("light", "dark"):
+                raise ValueError("colors keys must be 'light' or 'dark'")
+            if not isinstance(vars, dict):
+                raise ValueError(f"colors.{mode} must be a mapping")
+            for key, val in vars.items():
+                if not isinstance(val, str) or not _HEX_RE.match(val):
+                    raise ValueError(f"colors.{mode}.{key} must be a #rrggbb hex string")
         return v
 
 
@@ -104,8 +124,12 @@ def create_app(config_path: str | Path = "config.yaml", start_source: bool = Tru
     @app.post("/api/config")
     async def post_config(update: ConfigUpdate) -> dict:
         cfg = state["config"]
-        cfg.power_multiplier = update.power_multiplier
-        cfg.bonuses = update.bonuses
+        if update.power_multiplier is not None:
+            cfg.power_multiplier = update.power_multiplier
+        if update.bonuses is not None:
+            cfg.bonuses = update.bonuses
+        if update.colors is not None:
+            cfg.colors = update.colors
         target_changed = False
         if update.n3fjp_host is not None and update.n3fjp_host != cfg.n3fjp_host:
             cfg.n3fjp_host = update.n3fjp_host
@@ -115,8 +139,6 @@ def create_app(config_path: str | Path = "config.yaml", start_source: bool = Tru
             target_changed = True
         cfg.save(config_path)
         recompute()
-        # Re-point the live connection so a DHCP address change takes effect without
-        # an app restart (the old connection would otherwise retry the dead IP).
         if start_source and target_changed:
             await stop_source_task()
             await start_source_task()

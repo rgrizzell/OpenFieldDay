@@ -206,3 +206,34 @@ def test_logo_served_when_configured(tmp_path):
     r = client.get("/logo")
     assert r.status_code == 200
     assert r.content == b"\x89PNG-fake-bytes"
+
+
+def test_post_config_accepts_colors(tmp_path):
+    app, client = make_client(tmp_path)
+    palette = {
+        "light": {"bg": "#F4F1E9", "panel": "#E7E8E2", "fg": "#1A1A1A",
+                  "accent": "#0032CB", "good": "#2E7D32", "bad": "#D90000"},
+        "dark": {"bg": "#0A1A3F", "panel": "#11254F", "fg": "#E7E8E2",
+                 "accent": "#5A9CF2", "good": "#43A047", "bad": "#D90000"},
+    }
+    r = client.post("/api/config", json={"colors": palette})
+    assert r.status_code == 200
+    cfg = client.get("/api/config").json()
+    assert cfg["colors"]["light"]["accent"] == "#0032CB"
+    assert cfg["colors"]["dark"]["bg"] == "#0A1A3F"
+
+
+def test_post_config_rejects_bad_hex(tmp_path):
+    app, client = make_client(tmp_path)
+    r = client.post("/api/config", json={"colors": {"light": {"bg": "red"}}})
+    assert r.status_code == 422
+
+
+def test_post_config_colors_only_keeps_other_fields(tmp_path):
+    app, client = make_client(tmp_path)
+    client.post("/api/config", json={"power_multiplier": 5, "bonuses": {}})
+    client.post("/api/config", json={"colors": {"light": {"bg": "#112233", "panel": "#223344",
+                "fg": "#ffffff", "accent": "#0032CB", "good": "#2E7D32", "bad": "#D90000"}}})
+    cfg = client.get("/api/config").json()
+    assert cfg["power_multiplier"] == 5          # untouched by a colors-only POST
+    assert cfg["colors"]["light"]["bg"] == "#112233"
