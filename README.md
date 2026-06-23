@@ -52,24 +52,36 @@ auto_light_start: 5    # light mode begins at 05:00 local
 auto_light_end: 21     # dark mode begins at 21:00 local
 ```
 
-To override palette colors, add a `colors` block. Use the nested per-theme form to
-target light and dark independently (any key you omit keeps its built-in value):
+The easiest way to make a theme from your logo is the **Theme Builder** (Settings →
+Theme builder, or `/builder.html`). Pick six colors per mode — background, panel,
+text, accent, and the good/bad status colors — with a live preview, then Save. The
+app derives borders, muted text, tile fill, and guaranteed-readable text-on-color
+automatically, so any palette stays legible.
+
+The builder writes the six base colors per mode into `config.yaml`:
 
 ```yaml
 colors:
   light:
-    accent: "#b58900"
-    bg: "#fdf6e3"
+    bg: "#F4F1E9"      # Cream — page background
+    panel: "#E7E8E2"   # Bone — tile background
+    fg: "#1A1A1A"      # Ink — text
+    accent: "#0032CB"  # Cobalt
+    good: "#2E7D32"    # status: connected / worked
+    bad: "#D90000"     # status: disconnected (Race Red)
   dark:
-    accent: "#ffd166"
-    bg: "#0b1021"
+    bg: "#0A1A3F"      # Midnight
+    panel: "#11254F"
+    fg: "#E7E8E2"
+    accent: "#5A9CF2"  # Sky Blue
+    good: "#43A047"
+    bad: "#D90000"
 ```
 
-Overridable keys: `bg` (page background), `panel` (tile background), `fg` (text),
-`accent`, `good`, `bad`, `line` (borders), `dim` (muted text), and `tile-bg`
-(inner-tile fill). Values are any CSS color. A flat `colors:` mapping (no
-`light`/`dark` keys) is treated as **dark-theme** overrides for backward
-compatibility.
+(The example above is the bundled RARA palette.) Advanced users can still pin any
+derived variable — `panel`, `line`, `dim`, `tile-bg`, `on-accent`, `on-good`,
+`on-bad` — by adding it alongside the six base colors; an explicit value wins over
+the derived one.
 
 ### Logo
 
