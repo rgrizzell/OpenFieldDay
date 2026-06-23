@@ -79,7 +79,7 @@ colors:
 ```
 
 (The example above is the bundled RARA palette.) Advanced users can still pin any
-derived variable — `panel`, `line`, `dim`, `tile-bg`, `on-accent`, `on-good`,
+derived variable — `line`, `dim`, `tile-bg`, `on-accent`, `on-good`,
 `on-bad` — by adding it alongside the six base colors; an explicit value wins over
 the derived one.
 
