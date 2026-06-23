@@ -1,0 +1,9 @@
+{
+  "name": "openfieldday-frontend-tests",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Dev-only Node tests for the static frontend (no runtime deps).",
+  "scripts": {
+    "test": "node --test src/openfieldday/static"
+  }
+}
