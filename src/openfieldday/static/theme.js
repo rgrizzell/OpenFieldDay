@@ -61,14 +61,20 @@ function setupThemeToggle() {
   setInterval(() => { if (themeMode === "auto") applyThemeMode(); }, 60000);
 }
 
+// The 6 author-supplied base colors; a mode entry with all of them is a builder
+// palette we derive in full, otherwise it's treated as raw overrides (legacy).
+const BASE_KEYS = ["bg", "panel", "fg", "accent", "good", "bad"];
+
 // Inject config color overrides as per-theme rules. Appended after the stylesheet
 // so equal-specificity [data-theme=...] selectors win over the built-in defaults.
 function injectThemeColors(colors) {
   if (!colors) return;
   let css = "";
   for (const theme of ["light", "dark"]) {
-    const vars = colors[theme];
-    if (!vars) continue;
+    const entry = colors[theme];
+    if (!entry || Object.keys(entry).length === 0) continue;
+    const hasFullBase = BASE_KEYS.every((k) => entry[k]);
+    const vars = hasFullBase ? derivePalette(entry) : entry;
     const decls = Object.entries(vars).map(([k, v]) => `--${k}:${v};`).join("");
     if (decls) css += `[data-theme="${theme}"]{${decls}}`;
   }
