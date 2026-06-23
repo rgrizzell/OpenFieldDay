@@ -43,3 +43,8 @@ document.getElementById("form").addEventListener("submit", async (e) => {
 });
 
 load();
+// Match the dashboard's theme: apply config color overrides + the auto window,
+// and keep "auto"/"system" live while the page is open (theme.js already set the
+// stored mode synchronously before paint).
+loadThemeConfig();
+setupThemeToggle();
