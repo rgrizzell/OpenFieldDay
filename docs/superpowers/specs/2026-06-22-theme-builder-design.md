@@ -58,10 +58,12 @@ already uses (verified against the current values):
 Built-in palettes keep their literal current values in CSS; derivation is only used
 for builder-authored themes.
 
-## Part 2 — Color math module (`theme.js`)
+## Part 2 — Color math module (`colormath.js`)
 
-A small set of **pure functions**, the single source of truth used by both the live
-dashboard and the builder preview (no backend round-trips, instant preview):
+The color math is extracted into its own file, `colormath.js`, holding only **pure
+functions** (no DOM/browser dependencies) — the single source of truth used by both
+the live dashboard and the builder preview (no backend round-trips, instant
+preview):
 
 - `parseHex(hex) -> {r,g,b}`
 - `relativeLuminance({r,g,b}) -> 0..1`  (WCAG)
@@ -75,14 +77,24 @@ dashboard and the builder preview (no backend round-trips, instant preview):
 `derivePalette` merges any explicitly-provided key over the derived value, so an
 advanced user can still pin a raw variable in `config.yaml`.
 
-Verification: a one-off `node` check of `derivePalette` outputs (contrast ratios ≥
-4.5 for on-colors; derived shades match Solarized within rounding) plus visual
-render of the RARA theme. (The project has no JS test runner; color math is pure
-and deterministic.)
+**Dual-environment export.** `colormath.js` ends with a 3-line UMD-style footer so
+the same file works both as a classic browser script (functions on the global
+scope, consistent with the existing `theme.js`/`app.js` no-build architecture) and
+as a Node module (`module.exports`) for tests:
 
-`injectThemeColors(colors)` changes to: for each mode, `derivePalette(base)` then
-inject the full set as `[data-theme=mode]{…}`. A mode entry already containing the
-full set still works (extra keys pass through).
+```js
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { parseHex, relativeLuminance, contrastRatio, onColor,
+                     withAlpha, mix, derivePalette };
+}
+```
+
+The browser loads `<script src="/colormath.js">` before `theme.js`; the builder and
+dashboard call `derivePalette` from the global scope.
+
+`injectThemeColors(colors)` (in `theme.js`) changes to: for each mode,
+`derivePalette(base)` then inject the full set as `[data-theme=mode]{…}`. A mode
+entry already containing the full set still works (extra keys pass through).
 
 ## Part 3 — Theme builder page
 
@@ -130,12 +142,33 @@ builder against the preview):
 
 ## Testing / verification
 
-- **Pytest:** `POST /api/config` accepts and persists valid `colors`; rejects a
-  bad hex with 422; omitting `colors` leaves existing values untouched.
-- **`node` check** of `derivePalette`: on-colors meet contrast ≥ 4.5; derived
-  shades reproduce Solarized values within rounding.
+- **Pytest** (`pytest`): `POST /api/config` accepts and persists valid `colors`;
+  rejects a bad hex with 422; omitting `colors` leaves existing values untouched.
+- **Node tests** (`node --test`): a `colormath.test.js` using the built-in
+  `node:test` + `node:assert` runner (no npm dependencies) covering:
+  - `parseHex` handles `#rgb`/`#rrggbb` and rejects malformed input;
+  - `onColor` returns the higher-contrast choice and meets WCAG contrast ≥ 4.5
+    against its background, including a light accent (e.g. Flash `#F2B705`) where
+    today's hardcoded `#fff` would fail;
+  - derived `line`/`dim`/`tile-bg` reproduce the Solarized values within rounding;
+  - `derivePalette` returns all 12 keys and honors explicit overrides.
+- A minimal `package.json` (`"test": "node --test src/openfieldday/static"`, no
+  dependencies) wires up the runner. Node is a **dev/test-only** tool — it is not a
+  runtime dependency on the Pi (the app stays static-file/Node-free in production).
 - **Visual:** headless screenshots of the builder (both tabs) and the dashboard
   under the RARA light + dark themes, confirming readable text on every element.
+
+### New / changed files
+
+- `src/openfieldday/static/colormath.js` — new, pure color math (UMD footer).
+- `src/openfieldday/static/colormath.test.js` — new, `node --test`.
+- `package.json` — new, minimal, dev-only test script.
+- `src/openfieldday/static/builder.html` / `builder.js` — new, the builder page.
+- `src/openfieldday/static/theme.js` — `injectThemeColors` derives via `colormath`.
+- `src/openfieldday/static/styles.css` — `--on-*` vars; builder styles.
+- `src/openfieldday/static/settings.html` — link to the builder.
+- `src/openfieldday/app.py` — `colors` validation on `POST /api/config`.
+- `config.yaml` — RARA base palette (light + dark).
 
 ## Out of scope
 
