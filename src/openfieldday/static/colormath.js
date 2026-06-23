@@ -52,6 +52,11 @@ function mix(hexA, hexB, t) {
              + _clampHex(a.b + (b.b - a.b) * t);
 }
 
+const PALETTE_KEYS = [
+  "bg", "panel", "fg", "accent", "good", "bad",
+  "line", "dim", "tile-bg", "on-accent", "on-good", "on-bad",
+];
+
 function derivePalette(base) {
   const { bg, fg, accent, good, bad } = base;
   const derived = {
@@ -64,7 +69,11 @@ function derivePalette(base) {
     "on-bad": onColor(bad),
   };
   // Any explicit key in `base` (advanced raw override) wins over the derived value.
-  return Object.assign(derived, base);
+  // Only allow recognized palette keys through — unknown keys are silently dropped.
+  for (const k of PALETTE_KEYS) {
+    if (k in base) derived[k] = base[k];
+  }
+  return derived;
 }
 
 if (typeof module !== "undefined" && module.exports) {

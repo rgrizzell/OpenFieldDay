@@ -229,6 +229,15 @@ def test_post_config_rejects_bad_hex(tmp_path):
     assert r.status_code == 422
 
 
+def test_post_config_rejects_unknown_color_key(tmp_path):
+    app, client = make_client(tmp_path)
+    palette = {"light": {"bg": "#F4F1E9", "panel": "#E7E8E2", "fg": "#1A1A1A",
+                         "accent": "#0032CB", "good": "#2E7D32", "bad": "#D90000",
+                         "a}html{display:none": "#000000"}}
+    r = client.post("/api/config", json={"colors": palette})
+    assert r.status_code == 422
+
+
 def test_post_config_colors_only_keeps_other_fields(tmp_path):
     app, client = make_client(tmp_path)
     client.post("/api/config", json={"power_multiplier": 5, "bonuses": {}})

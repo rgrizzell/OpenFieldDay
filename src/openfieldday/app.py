@@ -23,6 +23,11 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 _HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
+_ALLOWED_COLOR_KEYS = {
+    "bg", "panel", "fg", "accent", "good", "bad",
+    "line", "dim", "tile-bg", "on-accent", "on-good", "on-bad",
+}
+
 
 class ConfigUpdate(BaseModel):
     # All optional so a caller can update just one concern (e.g. the theme builder
@@ -62,12 +67,14 @@ class ConfigUpdate(BaseModel):
     def _check_colors(cls, v: dict | None) -> dict | None:
         if v is None:
             return v
-        for mode, vars in v.items():
+        for mode, mode_colors in v.items():
             if mode not in ("light", "dark"):
                 raise ValueError("colors keys must be 'light' or 'dark'")
-            if not isinstance(vars, dict):
+            if not isinstance(mode_colors, dict):
                 raise ValueError(f"colors.{mode} must be a mapping")
-            for key, val in vars.items():
+            for key, val in mode_colors.items():
+                if key not in _ALLOWED_COLOR_KEYS:
+                    raise ValueError(f"colors.{mode}.{key} is not a recognized color key")
                 if not isinstance(val, str) or not _HEX_RE.match(val):
                     raise ValueError(f"colors.{mode}.{key} must be a #rrggbb hex string")
         return v

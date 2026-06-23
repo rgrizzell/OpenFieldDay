@@ -56,3 +56,12 @@ test("derivePalette lets an explicit key override the derived value", () => {
   });
   assert.strictEqual(p["on-accent"], "#123456");
 });
+
+test("derivePalette ignores keys outside the 12-key palette", () => {
+  const p = cm.derivePalette({
+    bg: "#ffffff", panel: "#eeeeee", fg: "#000000",
+    accent: "#0032CB", good: "#2E7D32", bad: "#D90000",
+    "a}html{display:none": "#000000",
+  });
+  assert.ok(!("a}html{display:none" in p));
+});
