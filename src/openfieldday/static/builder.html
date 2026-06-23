@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OpenFieldDay Theme Builder</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header><h1>Theme Builder</h1><a class="settings-link" href="/settings.html">← Settings</a></header>
+  <main class="builder">
+    <div class="builder-controls">
+      <div class="tabs">
+        <button data-mode="light" class="active" type="button">Light</button>
+        <button data-mode="dark" type="button">Dark</button>
+      </div>
+      <div id="inputs"></div>
+      <div class="builder-actions">
+        <button id="save" type="button">Save</button>
+        <button id="reset" type="button">Reset to default</button>
+        <span id="status"></span>
+      </div>
+    </div>
+    <div class="builder-preview">
+      <div id="previewPane" class="preview-pane" data-theme="light">
+        <div class="preview-header">
+          <strong class="preview-title">OpenFieldDay</strong>
+          <span class="preview-pill good">● Connected</span>
+          <span class="preview-pill bad">⚠ Disconnected</span>
+          <span class="preview-pill accent">● Contest Live</span>
+        </div>
+        <div class="preview-row">
+          <div class="preview-panel">
+            <div class="preview-big">1,234</div>
+            <div class="preview-label">Score</div>
+          </div>
+          <div class="preview-panel">
+            <div class="preview-secs">
+              <span class="preview-sec worked">CT</span>
+              <span class="preview-sec worked">EMA</span>
+              <span class="preview-sec">NH</span>
+              <span class="preview-sec">VT</span>
+            </div>
+            <button class="preview-btn" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/colormath.js"></script>
+  <script src="/theme.js"></script>
+  <script src="/builder.js"></script>
+</body>
+</html>

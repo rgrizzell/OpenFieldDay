@@ -139,3 +139,46 @@ body > header .settings-link { margin-left:auto; aspect-ratio:auto;
   font:inherit; font-weight:700; color:var(--on-accent); background:var(--accent);
   border:none; border-radius:0.5rem; cursor:pointer; }
 #saved { margin-left:0.8rem; color:var(--good); font-weight:700; }
+
+/* ---- Theme builder ---- */
+.builder { display:flex; gap:1.5rem; padding:1.5rem; align-items:flex-start; }
+.builder-controls { flex:0 0 340px; }
+.builder-preview { flex:1 1 0; min-width:0; }
+.tabs { display:flex; gap:0.5rem; margin-bottom:1rem; }
+.tabs button { flex:1; padding:0.5rem; font:inherit; font-weight:700; cursor:pointer;
+  background:var(--tile-bg); color:var(--fg); border:1px solid var(--line); border-radius:0.5rem; }
+.tabs button.active { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+.builder-row { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.7rem; }
+.builder-row label { flex:1; }
+.builder-row input[type="color"] { width:2.4rem; height:2.4rem; padding:0; cursor:pointer;
+  border:1px solid var(--line); border-radius:0.4rem; background:none; }
+.builder-row input[type="text"] { width:6.5rem; font:inherit; padding:0.35rem 0.5rem;
+  background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:0.4rem; }
+.builder-actions { margin-top:1.2rem; display:flex; align-items:center; gap:0.8rem; }
+.builder-actions button { padding:0.5rem 1.1rem; font:inherit; font-weight:700;
+  cursor:pointer; border-radius:0.5rem; }
+#save { color:var(--on-accent); background:var(--accent); border:none; }
+#reset { color:var(--fg); background:var(--tile-bg); border:1px solid var(--line); }
+#status { color:var(--good); font-weight:700; }
+
+/* Preview pane colors come from inline --vars set by builder.js (the candidate
+   palette), so it reflects edits live regardless of the page's own theme. */
+.preview-pane { background:var(--bg); color:var(--fg);
+  border:1px solid var(--line); border-radius:1rem; padding:1.25rem; }
+.preview-header { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;
+  border-bottom:1px solid var(--line); padding-bottom:0.9rem; margin-bottom:1rem; }
+.preview-title { color:var(--accent); font-size:1.3rem; margin-right:auto; }
+.preview-pill { font-weight:700; padding:0.2rem 0.6rem; border-radius:0.4rem; font-size:0.9rem; }
+.preview-pill.good { background:var(--good); color:var(--on-good); }
+.preview-pill.bad { background:var(--bad); color:var(--on-bad); }
+.preview-pill.accent { background:var(--accent); color:var(--on-accent); }
+.preview-row { display:flex; gap:1rem; }
+.preview-panel { flex:1; background:var(--panel); border-radius:0.8rem; padding:1.1rem; }
+.preview-big { font-size:2.6rem; font-weight:800; color:var(--accent); line-height:1; }
+.preview-label { text-transform:uppercase; letter-spacing:0.1em; opacity:0.7; margin-top:0.3rem; }
+.preview-secs { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.9rem; }
+.preview-sec { padding:0.35rem 0.55rem; border-radius:0.35rem; font-weight:700;
+  background:var(--tile-bg); color:var(--dim); }
+.preview-sec.worked { background:var(--good); color:var(--on-good); }
+.preview-btn { padding:0.45rem 1rem; font:inherit; font-weight:700; border:none;
+  border-radius:0.5rem; color:var(--on-accent); background:var(--accent); cursor:pointer; }
