@@ -7,11 +7,13 @@
 :root, [data-theme="light"] {
   --bg:#fdf6e3; --panel:#eee8d5; --fg:#586e75;       /* base3 / base2 / base01 */
   --accent:#268bd2; --good:#859900; --bad:#dc322f;   /* blue / green / red */
+  --on-accent:#fff; --on-good:#003; --on-bad:#fdf6e3;
   --line:rgba(88,110,117,0.22); --dim:#93a1a1; --tile-bg:rgba(88,110,117,0.10);
 }
 [data-theme="dark"] {
   --bg:#002b36; --panel:#073642; --fg:#93a1a1;       /* base03 / base02 / base1 */
   --accent:#268bd2; --good:#859900; --bad:#dc322f;   /* blue / green / red */
+  --on-accent:#fff; --on-good:#003; --on-bad:#fdf6e3;
   --line:rgba(147,161,161,0.18); --dim:#586e75; --tile-bg:rgba(147,161,161,0.10);
 }
 * { box-sizing: border-box; }
@@ -35,9 +37,9 @@ body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sa
 .theme-toggle { margin-left:auto; }
 .settings-link { margin-left:0.6rem; }
 #conn, #contest { align-self:center; font-weight:bold; padding:0.2rem 0.6rem; border-radius:0.4rem; }
-#conn.connected { background:var(--good); color:#003; }
-#conn.disconnected { background:var(--bad); color:#fdf6e3; }
-#contest.active { background:var(--good); color:#003; }
+#conn.connected { background:var(--good); color:var(--on-good); }
+#conn.disconnected { background:var(--bad); color:var(--on-bad); }
+#contest.active { background:var(--good); color:var(--on-good); }
 #contest.inactive { background:var(--tile-bg); color:var(--fg); border:1px solid var(--line); }
 main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:100vh; }
 .row { display:flex; gap:1rem; }
@@ -108,7 +110,7 @@ main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:100
        justify-content:center; padding:0.3rem 0.2rem;
        border-radius:0.35rem; background:var(--tile-bg); color:var(--dim);
        transition:background 0.3s, color 0.3s; }
-.sec.worked { background:var(--good); color:#003; }
+.sec.worked { background:var(--good); color:var(--on-good); }
 .chart canvas { flex:1; min-height:0; }
 
 /* ---- Settings page ---- */
@@ -134,6 +136,6 @@ body > header .settings-link { margin-left:auto; aspect-ratio:auto;
   background:var(--bg); color:var(--fg); border:1px solid var(--line);
   border-radius:0.4rem; padding:0.35rem 0.5rem; font:inherit; }
 #form button[type="submit"] { align-self:flex-start; padding:0.5rem 1.2rem;
-  font:inherit; font-weight:700; color:#fff; background:var(--accent);
+  font:inherit; font-weight:700; color:var(--on-accent); background:var(--accent);
   border:none; border-radius:0.5rem; cursor:pointer; }
 #saved { margin-left:0.8rem; color:var(--good); font-weight:700; }
