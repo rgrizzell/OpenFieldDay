@@ -23,12 +23,33 @@ STATIC_DIR = Path(__file__).parent / "static"
 class ConfigUpdate(BaseModel):
     power_multiplier: int
     bonuses: dict[str, int]
+    # N3FJP API target. Optional so callers can update scoring without touching it;
+    # when present, a change re-points the live source (see post_config).
+    n3fjp_host: str | None = None
+    n3fjp_port: int | None = None
 
     @field_validator("power_multiplier")
     @classmethod
     def _check_multiplier(cls, v: int) -> int:
         if v not in POWER_MULTIPLIERS:
             raise ValueError(f"power_multiplier must be one of {sorted(POWER_MULTIPLIERS)}")
+        return v
+
+    @field_validator("n3fjp_host")
+    @classmethod
+    def _check_host(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if not v:
+            raise ValueError("n3fjp_host must not be empty")
+        return v
+
+    @field_validator("n3fjp_port")
+    @classmethod
+    def _check_port(cls, v: int | None) -> int | None:
+        if v is not None and not (1 <= v <= 65535):
+            raise ValueError("n3fjp_port must be between 1 and 65535")
         return v
 
 
@@ -44,18 +65,29 @@ def create_app(config_path: str | Path = "config.yaml", start_source: bool = Tru
 
     store.on_change(recompute)
 
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        recompute()  # publish initial snapshot
-        task = None
-        if start_source:
-            cfg = state["config"]
-            source = N3FJPSource(cfg.n3fjp_host, cfg.n3fjp_port, store)
-            task = asyncio.create_task(source.run())
-        yield
+    # Holds the running N3FJP source task so a host/port change can restart it.
+    runtime: dict = {"source_task": None}
+
+    async def start_source_task() -> None:
+        cfg = state["config"]
+        source = N3FJPSource(cfg.n3fjp_host, cfg.n3fjp_port, store)
+        runtime["source_task"] = asyncio.create_task(source.run())
+
+    async def stop_source_task() -> None:
+        task = runtime.get("source_task")
         if task is not None:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
+            runtime["source_task"] = None
+        store.set_connected(False)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        recompute()  # publish initial snapshot
+        if start_source:
+            await start_source_task()
+        yield
+        await stop_source_task()
 
     app = FastAPI(lifespan=lifespan)
     app.state.store = store
@@ -70,12 +102,24 @@ def create_app(config_path: str | Path = "config.yaml", start_source: bool = Tru
         return state["config"].to_public_dict()
 
     @app.post("/api/config")
-    def post_config(update: ConfigUpdate) -> dict:
+    async def post_config(update: ConfigUpdate) -> dict:
         cfg = state["config"]
         cfg.power_multiplier = update.power_multiplier
         cfg.bonuses = update.bonuses
+        target_changed = False
+        if update.n3fjp_host is not None and update.n3fjp_host != cfg.n3fjp_host:
+            cfg.n3fjp_host = update.n3fjp_host
+            target_changed = True
+        if update.n3fjp_port is not None and update.n3fjp_port != cfg.n3fjp_port:
+            cfg.n3fjp_port = update.n3fjp_port
+            target_changed = True
         cfg.save(config_path)
         recompute()
+        # Re-point the live connection so a DHCP address change takes effect without
+        # an app restart (the old connection would otherwise retry the dead IP).
+        if start_source and target_changed:
+            await stop_source_task()
+            await start_source_task()
         return cfg.to_public_dict()
 
     @app.get("/api/bonus-catalog")

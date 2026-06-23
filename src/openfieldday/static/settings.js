@@ -4,6 +4,8 @@ async function load() {
     fetch("/api/bonus-catalog").then((r) => r.json()),
   ]);
   document.querySelector(`input[name=mult][value="${cfg.power_multiplier}"]`).checked = true;
+  document.getElementById("n3fjp_host").value = cfg.n3fjp_host ?? "";
+  document.getElementById("n3fjp_port").value = cfg.n3fjp_port ?? "";
   const box = document.getElementById("bonuses");
   for (const [name, points] of Object.entries(catalog)) {
     const checked = name in cfg.bonuses ? "checked" : "";
@@ -23,9 +25,21 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   const r = await fetch("/api/config", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ power_multiplier: mult, bonuses }),
+    body: JSON.stringify({
+      power_multiplier: mult,
+      bonuses,
+      n3fjp_host: document.getElementById("n3fjp_host").value.trim(),
+      n3fjp_port: Number(document.getElementById("n3fjp_port").value),
+    }),
   });
-  document.getElementById("saved").textContent = r.ok ? "Saved ✓" : "Error";
+  const saved = document.getElementById("saved");
+  if (r.ok) {
+    saved.textContent = "Saved ✓";
+  } else {
+    const body = await r.json().catch(() => null);
+    const reason = body?.detail?.[0]?.msg || body?.detail || "check your input";
+    saved.textContent = `Error: ${reason}`;
+  }
 });
 
 load();

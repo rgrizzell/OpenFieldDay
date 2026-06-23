@@ -16,6 +16,17 @@
         <label><input type="radio" name="mult" value="5"> 5× (≤5 W QRP)</label>
       </fieldset>
       <fieldset id="bonuses"><legend>Bonuses</legend></fieldset>
+      <fieldset>
+        <legend>N3FJP API target</legend>
+        <label>Host
+          <input type="text" id="n3fjp_host" name="n3fjp_host"
+                 placeholder="192.168.1.132" autocomplete="off" spellcheck="false">
+        </label>
+        <label>Port
+          <input type="number" id="n3fjp_port" name="n3fjp_port"
+                 min="1" max="65535" placeholder="1100">
+        </label>
+      </fieldset>
       <button type="submit">Save</button>
       <span id="saved"></span>
     </form>
