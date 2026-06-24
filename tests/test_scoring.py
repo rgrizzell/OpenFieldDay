@@ -87,6 +87,8 @@ def test_recent_qsos_newest_first_with_class_and_section():
     ]
     s = compute_stats(qsos, Config(), connected=True, now=NOW)
     assert [e.call for e in s.recent_qsos] == ["NEWEST", "OLDEST"]  # newest first
+    assert s.recent_qsos[0].band == "40"
+    assert s.recent_qsos[0].mode == "CW"
     assert s.recent_qsos[0].qso_class == "2A"
     assert s.recent_qsos[0].section == "EMA"
     assert s.recent_qsos[0].operator == "EF2GH"

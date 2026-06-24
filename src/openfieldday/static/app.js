@@ -1,10 +1,4 @@
-let chart;
 let rateChart;
-
-const GROUPS = ["Phone", "CW", "Digital"];
-// Bar colors are pulled from the theme CSS variables (which config overrides) so
-// the chart always matches the live palette instead of a second hardcoded list.
-const GROUP_VARS = { Phone: "--good", CW: "--bad", Digital: "--accent" };
 
 function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -12,15 +6,7 @@ function cssVar(name) {
 
 // --- Theme mode -----------------------------------------------------------
 // Light/dark theme resolution lives in theme.js (shared with the settings page).
-// The chart-color refresh below is registered there as an onThemeChange hook.
-
-// Bands an Extra-class operator can work (N3FJP band tokens, 160m..70cm), plus a
-// Satellite row and an Other catch-all. The axis is pre-populated so every band
-// shows even with zero QSOs. Bands not in this list fall into "Other"; Satellite
-// stays zero until N3FJP gives us a satellite/prop-mode signal to key on.
-const BANDS = ["160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6", "2", "1.25", "70cm"];
-const BAND_AXIS = [...BANDS, "Satellite", "Other"];
-const KNOWN_BANDS = new Set(BANDS);
+// The rate-chart color refresh below is registered there as an onThemeChange hook.
 
 // Complete ARRL/RAC section list (contests.arrl.org), grouped by US call area and
 // Canada. Worked sections are shaded; the rest render dim so the board shows what's
@@ -123,38 +109,9 @@ function startClock() {
   setInterval(tick, 1000);
 }
 
-function initChart() {
-  const ctx = document.getElementById("bandModeChart");
-  chart = new Chart(ctx, {
-    type: "bar",
-    // Create the (fixed) group datasets once. render() mutates their .data in
-    // place rather than replacing the array, so Chart.js keeps the prior element
-    // state and animates each bar from its previous value instead of from zero.
-    data: {
-      labels: BAND_AXIS,
-      datasets: GROUPS.map((g) => ({ label: g, backgroundColor: cssVar(GROUP_VARS[g]), data: [] })),
-    },
-    options: {
-      indexAxis: "y",  // horizontal bars: bands run down the y-axis
-      responsive: true, maintainAspectRatio: false,
-      scales: { x: { stacked: true, ticks: { color: cssVar("--fg") } },
-                y: { stacked: true, ticks: { color: cssVar("--fg") } } },
-      plugins: { legend: { labels: { color: cssVar("--fg") } } },
-    },
-  });
-}
-
-// Re-read theme CSS variables into both charts. Called after a theme switch, since
+// Re-read theme CSS variables into the rate sparkline after a theme switch, since
 // Chart.js captures colors at construction and won't otherwise track the palette.
 function applyChartColors() {
-  if (chart) {
-    GROUPS.forEach((g, i) => { chart.data.datasets[i].backgroundColor = cssVar(GROUP_VARS[g]); });
-    const fg = cssVar("--fg");
-    chart.options.scales.x.ticks.color = fg;
-    chart.options.scales.y.ticks.color = fg;
-    chart.options.plugins.legend.labels.color = fg;
-    chart.update();
-  }
   if (rateChart) {
     const accent = cssVar("--accent");
     rateChart.data.datasets[0].borderColor = accent;
@@ -193,26 +150,6 @@ function render(s) {
   contest.className = contestCls;
   contest.textContent = contestText;
 
-  // Index incoming counts by band -> mode group, then lay them onto the fixed axis.
-  const counts = {};
-  for (const bm of s.band_mode) {
-    (counts[bm.band] ??= {})[bm.mode_group] = bm.count;
-  }
-  GROUPS.forEach((g, i) => {
-    chart.data.datasets[i].data = BAND_AXIS.map((label) => {
-      if (label === "Satellite") return 0;  // no satellite signal from N3FJP yet
-      if (label === "Other") {
-        let sum = 0;
-        for (const [band, byGroup] of Object.entries(counts)) {
-          if (!KNOWN_BANDS.has(band)) sum += byGroup[g] || 0;
-        }
-        return sum;
-      }
-      return counts[label]?.[g] || 0;
-    });
-  });
-  chart.update();
-
   const tbody = document.querySelector("#opTable tbody");
   tbody.innerHTML = "";
   for (const op of s.top_operators || []) {
@@ -225,7 +162,7 @@ function render(s) {
   logBody.innerHTML = "";
   for (const e of s.recent_qsos || []) {
     const tr = document.createElement("tr");
-    for (const value of [e.call, e.qso_class, e.section, e.operator]) {
+    for (const value of [e.call, e.band, e.mode, e.qso_class, e.section, e.operator]) {
       const td = document.createElement("td");
       td.textContent = value ?? "";  // textContent: avoid injecting raw log text
       tr.appendChild(td);
@@ -257,9 +194,8 @@ function connect() {
 
 // theme.js already applied the stored theme synchronously before first paint.
 async function start() {
-  onThemeChange(applyChartColors);  // refresh chart palette on every theme switch
+  onThemeChange(applyChartColors);  // refresh rate-chart palette on every theme switch
   await applyConfig();              // inject per-theme overrides + read the auto window
-  initChart();
   initRateChart();
   initSections();
   startClock();

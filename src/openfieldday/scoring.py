@@ -63,7 +63,8 @@ def compute_stats(
         reverse=True,
     )[:RECENT_QSO_COUNT]
     recent_qsos = [
-        QSOLogEntry(call=q.call, qso_class=q.qso_class, section=q.section, operator=q.operator)
+        QSOLogEntry(call=q.call, band=q.band, mode=q.mode, qso_class=q.qso_class,
+                    section=q.section, operator=q.operator)
         for q in recent
     ]
 

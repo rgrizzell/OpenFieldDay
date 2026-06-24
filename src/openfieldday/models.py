@@ -31,6 +31,8 @@ class OperatorCount:
 @dataclass(frozen=True)
 class QSOLogEntry:
     call: str
+    band: str | None
+    mode: str | None
     qso_class: str | None
     section: str | None
     operator: str | None
