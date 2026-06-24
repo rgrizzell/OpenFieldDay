@@ -162,7 +162,7 @@ function render(s) {
   logBody.innerHTML = "";
   for (const e of s.recent_qsos || []) {
     const tr = document.createElement("tr");
-    for (const value of [e.call, e.band, e.mode, e.qso_class, e.section, e.operator]) {
+    for (const value of [e.call, e.qso_class, e.section, e.operator, e.band, e.mode]) {
       const td = document.createElement("td");
       td.textContent = value ?? "";  // textContent: avoid injecting raw log text
       tr.appendChild(td);

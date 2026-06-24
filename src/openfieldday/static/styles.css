@@ -96,8 +96,8 @@ main { display:flex; flex-direction:column; gap:1rem; padding:1.5rem; height:100
                    position:sticky; top:0; background:var(--panel); }
 .qsolog tbody td { padding:0.25rem 0.5rem; white-space:nowrap;
                    border-bottom:1px solid var(--line); }
-/* Everything but the last column (Op) shares the accent color; Op stays default. */
-.qsolog tbody td:nth-child(-n+5) { color:var(--accent); }
+/* Call, Class, Section share the accent color; Op, Band, Mode stay default text. */
+.qsolog tbody td:nth-child(-n+3) { color:var(--accent); }
 .qsolog tbody td:first-child { font-weight:700; }
 #secCount { font-weight:800; color:var(--accent); margin-left:0.4rem; letter-spacing:0; }
 .sec-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(7rem, 1fr));
